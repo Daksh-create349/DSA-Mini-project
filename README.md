@@ -1,6 +1,6 @@
 # PS_04: Adaptive Online Examination Platform with AI Proctoring
 
-## Authors
+## GROUP 4 
 
 - Daksh Srivastava
 - Sumit Shingole
@@ -12,23 +12,6 @@
 This is a C++ Data Structures and Algorithms mini project based on an adaptive online examination platform. The system stores questions, searches questions by keyword, generates an adaptive exam, records submissions, checks plagiarism, stores answer review history, ranks students, searches student results using a BST, performs proctoring analysis, and calculates performance analytics.
 
 The project is menu-driven. It is not just a static demo. A student can take an adaptive exam from the menu, submit answers, get a score, and then that result becomes available in the BST, ranking system, submission queue, and analytics module.
-
-## How To Run
-
-Open terminal in the project folder and run:
-
-```bash
-g++ main.cpp -o exam_platform
-./exam_platform
-```
-
-The first command compiles the program. The second command starts the menu-driven application.
-
-If you have already compiled once and `exam_platform` already exists, you can run only:
-
-```bash
-./exam_platform
-```
 
 ## Problem Statement
 
@@ -226,13 +209,6 @@ Hash key: 1#1#2#1#
 ```
 
 If another student has the same answer pattern, the second submission gets flagged.
-
-Each submission also stores a source label:
-
-- `Adaptive Exam`: submission was created automatically when a student took the exam using option 3.
-- `Manual Entry`: submission was added directly using option 5.
-
-This makes the submission queue easier to understand during presentation.
 
 ### 4. `adaptive_dp_sort_search.cpp`
 
@@ -441,6 +417,7 @@ DSA shown:
 ```
 
 This manually adds a student submission.
+This is kept just for Demo for option 3 (JUST TO EXPLAIN HOW IT WORKS.)
 
 Example:
 
@@ -455,10 +432,6 @@ Answers: 1 1 2 1
 DSA shown:
 
 - Queue
-
-Important note:
-
-Manual submissions added from option 5 are stored in the queue for batch evaluation and plagiarism checking. They do not automatically create a BST result or ranking score because the program does not know which exact question set was used. To create a scored result, use option 3.
 
 ### Option 6: Display Submission Queue
 
@@ -675,18 +648,7 @@ The new student will appear in the BST.
 
 ## Compile And Run
 
-### Simple Command
-
-Use this for normal running and presentation:
-
-```bash
-g++ main.cpp -o exam_platform
-./exam_platform
-```
-
-### Strict Checking Command
-
-Use this when you want the compiler to show extra warnings:
+### Recommended Command
 
 ```bash
 g++ -std=c++17 -Wall -Wextra -pedantic main.cpp -o exam_platform
@@ -894,7 +856,7 @@ Student results are searched by roll number. BST supports efficient insert and s
 
 This project is an adaptive online examination platform implemented in C++. It uses a linked list and trie for question storage and keyword search, dynamic programming for adaptive question selection, queue for submission handling, stack for answer review and undo, hashing for plagiarism detection, merge sort for student ranking, binary search for topic-wise question lookup, BST for storing and searching student results, and analytics/proctoring modules for performance and suspicious activity reports.
 
-## Viva Points
+## Points to be Noted !
 
 - Linked list is used because questions can be dynamically added.
 - Trie is used because keyword prefix search is faster than scanning every keyword.
