@@ -132,6 +132,10 @@ int main() {
     AutoProctor proctor;
     long long nextTimestamp = 1000;
 
+    // Track genuine per-topic performance across all exams
+    // Key: topic name, Value: vector of per-question scores (100 if correct, 0 if wrong)
+    unordered_map<string, vector<double>> topicScoresMap;
+
     seedQuestions(bank);
     seedStudents(resultTree, records);
 
@@ -215,11 +219,13 @@ int main() {
                             correctStreak++;
                             wrongStreak = 0;
                             latestCorrect = true;
+                            topicScoresMap[q->topic].push_back(100.0);
                         } else {
                             cout << "  Wrong. Correct answer was option " << q->answer << ".\n";
                             wrongStreak++;
                             correctStreak = 0;
                             latestCorrect = false;
+                            topicScoresMap[q->topic].push_back(0.0);
                         }
                     }
 
@@ -363,31 +369,9 @@ int main() {
                 for (BSTNode* node : resultTree.getAllSorted())
                     scores.push_back(node->score);
 
-                unordered_map<string, vector<double>> topicScores;
-                char addTopics = readYesNo("Add topic-wise marks also? (y/n): ");
-                if (addTopics == 'y' || addTopics == 'Y') {
-                    int topicCount = readInt("Number of topics (1-10): ", 1, 10);
-                    for (int i = 0; i < topicCount; i++) {
-                        string topic;
-                        cout << "Topic name: ";
-                        cin >> topic;
-                        int markCount = readInt("Number of marks for this topic (1-20): ", 1, 20);
-                        for (int j = 0; j < markCount; j++) {
-                            double mark;
-                            while (true) {
-                                cout << "Mark: ";
-                                if (cin >> mark && mark >= 0 && mark <= 100) break;
-                                cout << "Invalid input. Enter a mark between 0 and 100.\n";
-                                cin.clear();
-                                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                            }
-                            topicScores[topic].push_back(mark);
-                        }
-                    }
-                }
-
+                // Use genuine per-topic scores tracked during exams
                 PerformanceStats stats = PerformanceAnalytics::compute(scores);
-                stats.topicWiseAvg = PerformanceAnalytics::topicWiseAverage(topicScores);
+                stats.topicWiseAvg = PerformanceAnalytics::topicWiseAverage(topicScoresMap);
                 PerformanceAnalytics::displayStats(stats, "Exam 501");
                 break;
             }

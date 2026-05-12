@@ -86,8 +86,75 @@ DSA Mini project/
 |-- submission_queue_stack.cpp
 |-- adaptive_dp_sort_search.cpp
 |-- analytics_bst_proctor.cpp
+|-- server.cpp
+|-- httplib.h
+|-- frontend/
+|   |-- index.html
+|   |-- style.css
+|   |-- script.js
 |-- README.md
 ```
+
+## Modern Web Frontend Integration
+
+This project implements a high-performance web-based interface that transitions the terminal-driven C++ logic into a modern, graphical dashboard. The integration is built to maintain the absolute integrity of the original Data Structures and Algorithms while providing a premium user experience.
+
+### 1. Architecture: The Client-Server Model
+
+The system is built on a decoupled architecture where the frontend and backend are separate entities communicating over a local network:
+- Backend: A compiled C++ binary that manages the memory-resident data structures and executes the heavy algorithmic logic (DP, Sorting, BST).
+- Frontend: A Single-Page Application (SPA) that manages the user state, handles visual transitions, and captures proctoring events.
+- Communication Layer: Standardized JSON payloads exchanged via asynchronous HTTP requests.
+
+### 2. Backend Implementation (server.cpp)
+
+The C++ server is the core of the web integration. It is built using a lightweight, header-only HTTP library (cpp-httplib) that allows for direct access to system memory.
+
+#### Multi-threaded Request Handling
+The server uses the POSIX threads library (-lpthread) to handle concurrent connections. Each browser request is processed in a separate thread, preventing the UI from freezing while a heavy algorithm like Merge Sort or Dynamic Programming is running.
+
+#### Manual JSON Serialization
+Since standard C++ does not have built-in JSON support, the server implements manual serialization logic. Every object, from a single Question to a complex StudentBST, is converted into a string format using helper functions (jStr, jInt, jIntArr). This ensures maximum speed and zero external dependencies beyond the base HTTP library.
+
+#### Thread Safety and Synchronization
+To protect the shared global state (like the QuestionBank and StudentRecords), the server implements Mutex Locking. Every time an API endpoint reads or writes to the shared data structures, it locks a global mutex to prevent data corruption from simultaneous requests.
+
+### 3. Frontend Implementation (frontend/)
+
+The frontend is a lightweight engine that focuses on performance and visual excellence.
+
+#### UI Logic and Single-Page Architecture
+The interface is built as a Single-Page Application. Instead of loading new pages, the JavaScript engine toggles the visibility of different "panels." This provides an app-like experience with zero loading screens between different DSA features.
+
+#### The JavaScript Event Engine (script.js)
+The script.js file acts as the nervous system of the application. It handles three primary categories of logic:
+- Fetch Management: Custom wrapper functions around the Fetch API handle all GET and POST requests to the C++ server.
+- Dynamic DOM Rendering: The engine receives raw JSON data from the C++ backend and uses template literals to build complex HTML structures (like the ranking table or the exam interface) on the fly.
+- Real-time State Tracking: During an exam, the JS engine tracks time limits, streak counts, and current question progress, synchronizing this data with the backend after every submission.
+
+#### AI Proctoring Integration
+Unlike the terminal version which requires manual input for proctoring alerts, the web version captures these events automatically:
+- Visibility API: Detects when the user switches tabs or minimizes the browser.
+- Event Listeners: Monitors the DOM for copy-paste attempts and context menu (right-click) usage.
+- Timestamping: Records millisecond-accurate timestamps for every answer, which are then analyzed by the C++ AutoProctor engine to detect timing anomalies.
+
+### 4. Detailed Feature Data Flow
+
+To understand the integration, consider the lifecycle of an Adaptive Exam:
+1. Selection: The user enters parameters in the browser. The JS sends a POST request to /api/exam/start.
+2. Logic: The C++ backend receives the parameters and executes the Dynamic Programming (Knapsack) algorithm to select questions from the QuestionBank.
+3. Rendering: The C++ server sends the selected questions as JSON. The JS receives them and renders the interactive exam cards.
+4. Submission: As the user answers, JS records the responses and timestamps. On completion, it sends the full payload to /api/exam/submit.
+5. Storage: The C++ server scores the exam, updates the StudentBST, adds the record to the Merge Sort ranking list, and calculates the next adaptive difficulty level.
+6. Feedback: The server returns the final results, which the JS renders immediately as a success dashboard.
+
+### 5. Performance and Security Design
+
+- CORS Management: The server implements Cross-Origin Resource Sharing (CORS) headers to allow the browser to safely communicate with the C++ backend during development.
+- Static Asset Serving: The server uses a high-speed mount point to serve the HTML, CSS, and JS files directly from disk, ensuring the interface loads instantly.
+- Optimization: The backend is compiled with the -O2 optimization flag to ensure that algorithmic computations are faster than the network latency.
+
+This integration proves that C++ can power modern, high-fidelity web applications while retaining its position as the fastest language for complex data structures and algorithms.
 
 ## File Wise Explanation
 
