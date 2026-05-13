@@ -95,66 +95,205 @@ DSA Mini project/
 |-- README.md
 ```
 
+
 ## Modern Web Frontend Integration
 
-This project implements a high-performance web-based interface that transitions the terminal-driven C++ logic into a modern, graphical dashboard. The integration is built to maintain the absolute integrity of the original Data Structures and Algorithms while providing a premium user experience.
+The web frontend converts every terminal menu option into an interactive browser panel. A compiled C++ binary continues to own all data structures and algorithmic logic. The browser is purely a graphical client that sends requests and renders the responses. No DSA logic lives in JavaScript — it lives entirely in C++.
 
-### 1. Architecture: The Client-Server Model
+### Architecture Overview
 
-The system is built on a decoupled architecture where the frontend and backend are separate entities communicating over a local network:
-- Backend: A compiled C++ binary that manages the memory-resident data structures and executes the heavy algorithmic logic (DP, Sorting, BST).
-- Frontend: A Single-Page Application (SPA) that manages the user state, handles visual transitions, and captures proctoring events.
-- Communication Layer: Standardized JSON payloads exchanged via asynchronous HTTP requests.
+```
+Browser (index.html + style.css + script.js)
+        │  HTTP JSON requests (GET / POST)
+        ▼
+C++ HTTP Server (server.cpp using cpp-httplib)
+        │  direct function calls
+        ▼
+C++ DSA Modules (question_bank, adaptive_dp, analytics_bst_proctor, etc.)
+```
 
-### 2. Backend Implementation (server.cpp)
+The C++ server runs on `localhost:8080`. It serves the frontend files statically and also exposes a REST API. The browser never touches the data structures directly — it only talks to the API endpoints.
 
-The C++ server is the core of the web integration. It is built using a lightweight, header-only HTTP library (cpp-httplib) that allows for direct access to system memory.
+---
 
-#### Multi-threaded Request Handling
-The server uses the POSIX threads library (-lpthread) to handle concurrent connections. Each browser request is processed in a separate thread, preventing the UI from freezing while a heavy algorithm like Merge Sort or Dynamic Programming is running.
+### File 1: `index.html` — Structure and Layout
 
-#### Manual JSON Serialization
-Since standard C++ does not have built-in JSON support, the server implements manual serialization logic. Every object, from a single Question to a complex StudentBST, is converted into a string format using helper functions (jStr, jInt, jIntArr). This ensures maximum speed and zero external dependencies beyond the base HTTP library.
+`index.html` defines the full shell of the Single-Page Application. It has two main regions:
 
-#### Thread Safety and Synchronization
-To protect the shared global state (like the QuestionBank and StudentRecords), the server implements Mutex Locking. Every time an API endpoint reads or writes to the shared data structures, it locks a global mutex to prevent data corruption from simultaneous requests.
+**Sidebar (`<nav id="sidebar">`)** — A persistent left navigation panel divided into four groups:
 
-### 3. Frontend Implementation (frontend/)
+| Group | Buttons |
+| --- | --- |
+| Question Bank | View Questions, Keyword Search, Topic Search |
+| Examination | Take Exam (DP), Answer Review |
+| Submissions | Add Submission, View Queue, Plagiarism Check |
+| Results & Analytics | Student BST, Rankings, Proctoring, Analytics |
 
-The frontend is a lightweight engine that focuses on performance and visual excellence.
+Every button carries a `data-panel` attribute. Clicking a button sets the corresponding `<section>` visible and hides every other panel. This is what makes it a Single-Page Application — only one section is shown at a time, no page reloads.
 
-#### UI Logic and Single-Page Architecture
-The interface is built as a Single-Page Application. Instead of loading new pages, the JavaScript engine toggles the visibility of different "panels." This provides an app-like experience with zero loading screens between different DSA features.
+**Main content area (`<main id="content">`)** — Contains 12 named `<section>` panels, one for each DSA feature:
 
-#### The JavaScript Event Engine (script.js)
-The script.js file acts as the nervous system of the application. It handles three primary categories of logic:
-- Fetch Management: Custom wrapper functions around the Fetch API handle all GET and POST requests to the C++ server.
-- Dynamic DOM Rendering: The engine receives raw JSON data from the C++ backend and uses template literals to build complex HTML structures (like the ranking table or the exam interface) on the fly.
-- Real-time State Tracking: During an exam, the JS engine tracks time limits, streak counts, and current question progress, synchronizing this data with the backend after every submission.
+| Panel ID | Feature | DSA Shown |
+| --- | --- | --- |
+| `panel-questions` | View full question bank | Linked List traversal |
+| `panel-search` | Prefix keyword search | Trie search |
+| `panel-topic` | Search by topic | Binary Search |
+| `panel-exam` | Adaptive exam | DP Knapsack |
+| `panel-review` | Answer review and undo | Stack (LIFO) |
+| `panel-add-sub` | Add manual submission | Queue enqueue |
+| `panel-submissions` | View submission queue | Queue traversal |
+| `panel-plagiarism` | Run plagiarism check | Hash Map comparison |
+| `panel-students` | View BST records and search | BST inorder + search |
+| `panel-ranking` | Ranked leaderboard | Merge Sort |
+| `panel-proctoring` | Analyze exam activity | Vector + rule engine |
+| `panel-analytics` | Score statistics | Hash Map + arithmetic |
 
-#### AI Proctoring Integration
-Unlike the terminal version which requires manual input for proctoring alerts, the web version captures these events automatically:
-- Visibility API: Detects when the user switches tabs or minimizes the browser.
-- Event Listeners: Monitors the DOM for copy-paste attempts and context menu (right-click) usage.
-- Timestamping: Records millisecond-accurate timestamps for every answer, which are then analyzed by the C++ AutoProctor engine to detect timing anomalies.
+The DSA footer tags at the bottom of the sidebar (`Linked List`, `Trie`, `BST`, etc.) are cosmetic labels that confirm which data structures power the platform.
 
-### 4. Detailed Feature Data Flow
+---
 
-To understand the integration, consider the lifecycle of an Adaptive Exam:
-1. Selection: The user enters parameters in the browser. The JS sends a POST request to /api/exam/start.
-2. Logic: The C++ backend receives the parameters and executes the Dynamic Programming (Knapsack) algorithm to select questions from the QuestionBank.
-3. Rendering: The C++ server sends the selected questions as JSON. The JS receives them and renders the interactive exam cards.
-4. Submission: As the user answers, JS records the responses and timestamps. On completion, it sends the full payload to /api/exam/submit.
-5. Storage: The C++ server scores the exam, updates the StudentBST, adds the record to the Merge Sort ranking list, and calculates the next adaptive difficulty level.
-6. Feedback: The server returns the final results, which the JS renders immediately as a success dashboard.
+### File 2: `style.css` — Design System
 
-### 5. Performance and Security Design
+`style.css` implements a dark-mode design system built entirely with CSS custom properties (variables). This makes the entire colour palette and spacing consistent across every panel.
 
-- CORS Management: The server implements Cross-Origin Resource Sharing (CORS) headers to allow the browser to safely communicate with the C++ backend during development.
-- Static Asset Serving: The server uses a high-speed mount point to serve the HTML, CSS, and JS files directly from disk, ensuring the interface loads instantly.
-- Optimization: The backend is compiled with the -O2 optimization flag to ensure that algorithmic computations are faster than the network latency.
+**Core design tokens defined in `:root`:**
 
-This integration proves that C++ can power modern, high-fidelity web applications while retaining its position as the fastest language for complex data structures and algorithms.
+| Variable | Value | Used For |
+| --- | --- | --- |
+| `--bg` | `#0b0d17` | Page background |
+| `--bg-card` | `#12152a` | Card and form backgrounds |
+| `--accent` | `#5b6ef5` | Active states, buttons, highlights |
+| `--green` | `#34d399` | Correct answers, success messages |
+| `--red` | `#f87171` | Wrong answers, flags, errors |
+| `--orange` | `#fbbf24` | Topic badges, warnings |
+| `--font` | `Inter` | All body text |
+| `--mono` | `JetBrains Mono` | IDs, scores, answer arrays, code-like values |
+
+**Key component classes:**
+
+- `.q-card` — Question card rendered in the question bank and search results. Highlights the correct answer option in green when `showAnswer` is true.
+- `.exam-q` — Exam question card rendered during an active exam. Options use radio inputs and visually highlight selected, correct, and wrong states after submission.
+- `.data-table` — Consistent table style used for rankings, submission queue, student BST display, and topic-wise analytics.
+- `.stat-card` — Used in the Analytics panel to display average, highest, lowest, standard deviation, and count as large-number metric cards.
+- `.alert-card` — Used in the Proctoring panel to display each individual suspicious activity alert.
+- `.status-msg` — Inline feedback messages with three variants: `.success` (green), `.error` (red), `.info` (blue/accent).
+- `.algo-badge` — Small monospace label in the top-right of each panel header that names the DSA powering that feature.
+
+The sidebar collapses to icon-only mode below 768px screen width for mobile responsiveness.
+
+---
+
+### File 3: `script.js` — Application Logic
+
+`script.js` is the complete client-side brain. It is structured in 12 numbered sections, one per feature, each wired to its corresponding HTML panel and C++ API endpoint.
+
+#### Navigation Engine
+
+```js
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => { ... });
+});
+```
+
+Every sidebar button triggers: remove `active` from all buttons and panels, add `active` to the clicked button and its matching panel. Panels for Questions, Submissions, and Students auto-fetch fresh data from the C++ server when switched to.
+
+#### HTTP Wrapper Functions
+
+Two thin wrappers keep all network code consistent:
+
+```js
+async function get(url)           // Issues a GET, returns parsed JSON
+async function post(url, data)    // Issues a POST with JSON body, returns parsed JSON
+```
+
+All 12 features use only these two functions to communicate with the backend. The `API` constant is an empty string `''` so all requests go to the same origin the page was served from (i.e. `localhost:8080`).
+
+#### Question Card Builder (`buildQCard`)
+
+A single reusable function that takes a question object from the API and returns an HTML string. It renders the question ID, topic badge, difficulty stars (★☆☆☆☆ style), question text, four answer options (with the correct one highlighted in green when `showAnswer=true`), and keyword tags. This function is reused by the Question Bank panel, Keyword Search panel, and Topic Search panel.
+
+#### Feature-by-Feature Breakdown
+
+**1. Question Bank** — Calls `GET /api/questions` on load. Renders all questions as cards using `buildQCard`. Auto-loads when the panel is navigated to.
+
+**2. Keyword Search (Trie)** — Calls `GET /api/questions/search?keyword=<prefix>` when the Search button is clicked or Enter is pressed. Returns only questions whose keywords match the prefix via the C++ Trie.
+
+**3. Topic Search (Binary Search)** — Calls `GET /api/questions/topic?topic=<topic>` with a dropdown-selected topic. The C++ backend sorts questions by topic and uses binary search to find all matches.
+
+**4. Adaptive Exam (DP Knapsack)** — The most complex flow:
+   - **Setup phase**: User fills roll number, name, difficulty level (1–5), and time limit. Sends `POST /api/exam/start` with `{studentLevel, timeLimit}`.
+   - **Render phase**: C++ runs the DP Knapsack algorithm and returns the selected question set as JSON. JS hides the setup form and renders each question as an `.exam-q` card with radio button options.
+   - **Submit phase**: User picks answers and clicks Submit. JS collects all selected radio values, sends `POST /api/exam/submit` with `{roll, name, examId, level, answers[], questionIds[]}`.
+   - **Results phase**: C++ scores the exam, stores the result in the BST and ranking records, and returns `{score, correct, total, attempt, currentLevel, nextLevel, correctAnswers[]}`. JS highlights every option correct/wrong and renders the score card with the next adaptive difficulty level.
+   - **Reset**: A "Take Another Exam" button resets all state for a new attempt.
+
+**5. Answer Review Stack** — Two buttons: `Push Review` calls `POST /api/review/push` with `{questionId, prevAnswer, newAnswer, note}`. `Undo (Pop)` calls `POST /api/review/pop`. The C++ stack returns the size after push, or the undone review entry after pop.
+
+**6. Add Submission** — Manually enqueues a submission by calling `POST /api/submissions/add` with `{studentId, examId, name, answers[]}`. Answers are entered as comma-separated values (e.g. `1,2,0,3`) and parsed to an integer array before sending.
+
+**7. Submission Queue** — Calls `GET /api/submissions` and renders a table of all queued submissions with columns: Name, ID, Exam ID, Source (exam or manual), Answers, and a plagiarism flag column.
+
+**8. Plagiarism Check** — Calls `POST /api/plagiarism`. The C++ backend hashes every submission's answer array and flags any duplicate patterns. Returns total flagged count and the full submission list with flag status. Flagged submissions are marked with a red ⚠ PLAGIARISM FLAG label.
+
+**9. Student BST** — Calls `GET /api/students` to render all records via inorder BST traversal (sorted by roll number). A separate `GET /api/students/search?roll=<n>` lookup searches the BST for a specific roll number and shows the result in a status box.
+
+**10. Rankings (Merge Sort)** — Calls `GET /api/ranking`. The C++ backend runs merge sort on all student records, deduplicates by keeping only each student's latest attempt, and returns the sorted list. JS adds 🥇🥈🥉 medals to the top three positions.
+
+**11. Proctoring** — Calls `POST /api/proctoring` with `{roll, copyPaste, tabSwitch, faceAbsent}`. The C++ engine retrieves the recorded answer timestamps from that student's exam and checks for time gaps longer than 30 seconds (possible cheating pause) and bursts of answers within 2 seconds (rapid clicking). The three checkbox flags from the browser (`copyPaste`, `tabSwitch`, `faceAbsent`) represent real DOM events captured during the exam — `document.addEventListener('paste', ...)`, the Page Visibility API, and right-click blocking. Results are shown as a proctoring report with individual alert cards and a `SUSPICIOUS` or `CLEAN` badge.
+
+**12. Analytics** — Calls `GET /api/analytics`. Renders five stat cards for average, highest, lowest, standard deviation, and total student count. Below the stats, a table shows topic-wise average scores with a colour-coded progress bar (green ≥70%, orange ≥40%, red <40%).
+
+---
+
+### API Endpoint Reference
+
+| Method | Endpoint | Used By | C++ DSA |
+| --- | --- | --- | --- |
+| GET | `/api/questions` | Question Bank panel | Linked List traversal |
+| GET | `/api/questions/search?keyword=` | Keyword Search panel | Trie prefix search |
+| GET | `/api/questions/topic?topic=` | Topic Search panel | Sort + Binary Search |
+| POST | `/api/exam/start` | Exam setup | DP Knapsack |
+| POST | `/api/exam/submit` | Exam submission | BST insert, Merge Sort, Analytics |
+| POST | `/api/review/push` | Answer Review panel | Stack push |
+| POST | `/api/review/pop` | Answer Review undo | Stack pop |
+| POST | `/api/submissions/add` | Add Submission panel | Queue enqueue |
+| GET | `/api/submissions` | Submission Queue panel | Queue traversal |
+| POST | `/api/plagiarism` | Plagiarism panel | Hash Map comparison |
+| GET | `/api/students` | Student BST panel | BST inorder traversal |
+| GET | `/api/students/search?roll=` | BST search | BST search |
+| GET | `/api/ranking` | Rankings panel | Merge Sort + dedup |
+| POST | `/api/proctoring` | Proctoring panel | Vector analysis |
+| GET | `/api/analytics` | Analytics panel | Hash Map + arithmetic |
+
+---
+
+### How to Run the Web Version
+
+**Step 1 — Compile the server:**
+
+```bash
+g++ -std=c++17 -O2 -Wall server.cpp -o exam_server -lpthread
+```
+
+**Step 2 — Run the server:**
+
+```bash
+./exam_server
+```
+
+The server starts on `http://localhost:8080`. It automatically serves the `frontend/` folder.
+
+**Step 3 — Open the dashboard:**
+
+Open your browser and go to:
+
+```
+http://localhost:8080
+```
+
+All 12 DSA features are immediately available from the sidebar.
+
+
 
 ## File Wise Explanation
 
