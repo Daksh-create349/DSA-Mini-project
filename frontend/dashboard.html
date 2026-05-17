@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Online Examination Platform</title>
+    <meta name="description" content="DSA-powered adaptive online examination platform with AI proctoring, built with C++ backend">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⬡</span>
+                <div>
+                    <h1>ExamOS</h1>
+                    <span class="badge">DSA Powered</span>
+                </div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">🌗</button>
+        </div>
+        <div class="nav-section-label">Question Bank</div>
+        <button class="nav-btn active" data-panel="questions" id="nav-questions">
+            <span class="nav-icon">📋</span> View Questions
+        </button>
+        <button class="nav-btn" data-panel="search" id="nav-search">
+            <span class="nav-icon">🔍</span> Keyword Search
+        </button>
+        <button class="nav-btn" data-panel="topic" id="nav-topic">
+            <span class="nav-icon">🎯</span> Topic Search
+        </button>
+
+        <div class="nav-section-label">Examination</div>
+        <button class="nav-btn" data-panel="exam" id="nav-exam">
+            <span class="nav-icon">📝</span> Take Exam (DP)
+        </button>
+        <button class="nav-btn" data-panel="review" id="nav-review">
+            <span class="nav-icon">🔄</span> Answer Review
+        </button>
+
+        <div class="nav-section-label">Submissions</div>
+        <button class="nav-btn" data-panel="add-sub" id="nav-add-sub">
+            <span class="nav-icon">➕</span> Add Submission
+        </button>
+        <button class="nav-btn" data-panel="submissions" id="nav-submissions">
+            <span class="nav-icon">📬</span> View Queue
+        </button>
+        <button class="nav-btn" data-panel="plagiarism" id="nav-plagiarism">
+            <span class="nav-icon">🚨</span> Plagiarism Check
+        </button>
+
+        <div class="nav-section-label">Results & Analytics</div>
+        <button class="nav-btn" data-panel="students" id="nav-students">
+            <span class="nav-icon">🌳</span> Student BST
+        </button>
+        <button class="nav-btn" data-panel="ranking" id="nav-ranking">
+            <span class="nav-icon">🏆</span> Rankings
+        </button>
+        <button class="nav-btn" data-panel="proctoring" id="nav-proctoring">
+            <span class="nav-icon">👁️</span> Proctoring
+        </button>
+        <button class="nav-btn" data-panel="analytics" id="nav-analytics">
+            <span class="nav-icon">📊</span> Analytics
+        </button>
+
+        <div class="sidebar-footer">
+            <div class="ds-tags">
+                <span class="ds-tag">Linked List</span>
+                <span class="ds-tag">Trie</span>
+                <span class="ds-tag">BST</span>
+                <span class="ds-tag">Queue</span>
+                <span class="ds-tag">Stack</span>
+                <span class="ds-tag">DP</span>
+                <span class="ds-tag">Merge Sort</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="content">
+        <!-- Questions Panel -->
+        <section id="panel-questions" class="panel active">
+            <div class="panel-header">
+                <h2>Question Bank</h2>
+                <span class="algo-badge">Linked List + Trie</span>
+            </div>
+            <p class="panel-desc">All questions stored in a linked list with trie-based keyword indexing.</p>
+            <div id="questions-list" class="card-grid"></div>
+        </section>
+
+        <!-- Keyword Search Panel -->
+        <section id="panel-search" class="panel">
+            <div class="panel-header">
+                <h2>Keyword Search</h2>
+                <span class="algo-badge">Trie Prefix Search</span>
+            </div>
+            <p class="panel-desc">Search questions by keyword prefix using the Trie data structure.</p>
+            <div class="input-row">
+                <input type="text" id="search-input" placeholder="Enter keyword prefix (e.g. sort, bst, dp)">
+                <button class="btn-primary" id="search-btn">Search</button>
+            </div>
+            <div id="search-results" class="card-grid"></div>
+        </section>
+
+        <!-- Topic Search Panel -->
+        <section id="panel-topic" class="panel">
+            <div class="panel-header">
+                <h2>Binary Search by Topic</h2>
+                <span class="algo-badge">Binary Search</span>
+            </div>
+            <p class="panel-desc">Questions are sorted by topic, then searched using binary search.</p>
+            <div class="input-row">
+                <select id="topic-select">
+                    <option value="">Select a topic</option>
+                    <option value="Searching">Searching</option>
+                    <option value="Queue">Queue</option>
+                    <option value="BST">BST</option>
+                    <option value="Sorting">Sorting</option>
+                    <option value="DP">DP</option>
+                    <option value="Stack">Stack</option>
+                </select>
+                <button class="btn-primary" id="topic-btn">Search</button>
+            </div>
+            <div id="topic-results" class="card-grid"></div>
+        </section>
+
+        <!-- Exam Panel -->
+        <section id="panel-exam" class="panel">
+            <div class="panel-header">
+                <h2>Adaptive Exam</h2>
+                <span class="algo-badge">DP Knapsack Selection</span>
+            </div>
+            <p class="panel-desc">Questions selected via DP knapsack to maximize topic coverage within time constraints.</p>
+            <!-- Exam Setup Form -->
+            <div id="exam-setup" class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Roll Number</label>
+                        <input type="number" id="exam-roll" placeholder="e.g. 104" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="exam-name" placeholder="e.g. Daksh">
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulty Level (1-5)</label>
+                        <input type="number" id="exam-level" value="3" min="1" max="5">
+                    </div>
+                    <div class="form-group">
+                        <label>Time Limit (seconds)</label>
+                        <input type="number" id="exam-time" value="300" min="60" max="600">
+                    </div>
+                </div>
+                <button class="btn-primary" id="exam-start-btn">Start Exam</button>
+            </div>
+            <!-- Exam Questions -->
+            <div id="exam-questions" class="hidden"></div>
+            <!-- Exam Result -->
+            <div id="exam-result" class="hidden"></div>
+        </section>
+
+        <!-- Answer Review Panel -->
+        <section id="panel-review" class="panel">
+            <div class="panel-header">
+                <h2>Answer Review Stack</h2>
+                <span class="algo-badge">Stack (LIFO)</span>
+            </div>
+            <p class="panel-desc">Review answer changes using a LIFO stack. Undo the latest change anytime.</p>
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Question ID</label>
+                        <input type="number" id="review-qid" placeholder="e.g. 1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Previous Answer (0-3)</label>
+                        <input type="number" id="review-prev" min="0" max="3">
+                    </div>
+                    <div class="form-group">
+                        <label>New Answer (0-3)</label>
+                        <input type="number" id="review-new" min="0" max="3">
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <input type="text" id="review-note" placeholder="Optional note">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-primary" id="review-push-btn">Push Review</button>
+                    <button class="btn-danger" id="review-pop-btn">Undo (Pop)</button>
+                </div>
+            </div>
+            <div id="review-status" class="status-box"></div>
+        </section>
+
+        <!-- Add Submission Panel -->
+        <section id="panel-add-sub" class="panel">
+            <div class="panel-header">
+                <h2>Add Submission</h2>
+                <span class="algo-badge">Queue (FIFO)</span>
+            </div>
+            <p class="panel-desc">Manually add a submission to the FIFO processing queue.</p>
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Student ID</label>
+                        <input type="number" id="sub-sid" placeholder="e.g. 104" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Exam ID</label>
+                        <input type="number" id="sub-eid" placeholder="e.g. 501" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="sub-name" placeholder="e.g. Sumit">
+                    </div>
+                    <div class="form-group">
+                        <label>Answers (comma-separated, 0-3)</label>
+                        <input type="text" id="sub-answers" placeholder="e.g. 1,2,0,3">
+                    </div>
+                </div>
+                <button class="btn-primary" id="sub-add-btn">Add to Queue</button>
+            </div>
+            <div id="sub-status" class="status-box"></div>
+        </section>
+
+        <!-- Submissions Panel -->
+        <section id="panel-submissions" class="panel">
+            <div class="panel-header">
+                <h2>Submission Queue</h2>
+                <span class="algo-badge">Queue (FIFO)</span>
+            </div>
+            <p class="panel-desc">View all pending submissions in FIFO order.</p>
+            <button class="btn-primary" id="sub-refresh-btn" style="margin-bottom:1rem;">Refresh</button>
+            <div id="submissions-list"></div>
+        </section>
+
+        <!-- Plagiarism Panel -->
+        <section id="panel-plagiarism" class="panel">
+            <div class="panel-header">
+                <h2>Plagiarism Detection</h2>
+                <span class="algo-badge">Hash Comparison</span>
+            </div>
+            <p class="panel-desc">Detect duplicate answer patterns across submissions using hash-based comparison.</p>
+            <button class="btn-danger" id="plag-btn">Run Plagiarism Check</button>
+            <div id="plag-results" style="margin-top:1rem;"></div>
+        </section>
+
+        <!-- Students Panel -->
+        <section id="panel-students" class="panel">
+            <div class="panel-header">
+                <h2>Student Records (BST)</h2>
+                <span class="algo-badge">Binary Search Tree</span>
+            </div>
+            <p class="panel-desc">Student records stored in a BST keyed by roll number. Inorder traversal gives sorted order.</p>
+            <div class="input-row" style="margin-bottom:1rem;">
+                <input type="number" id="student-roll" placeholder="Search by roll number" min="1">
+                <button class="btn-primary" id="student-search-btn">Search BST</button>
+            </div>
+            <div id="student-search-result" class="status-box"></div>
+            <div id="students-table"></div>
+        </section>
+
+        <!-- Ranking Panel -->
+        <section id="panel-ranking" class="panel">
+            <div class="panel-header">
+                <h2>Student Rankings</h2>
+                <span class="algo-badge">Merge Sort (Stable)</span>
+            </div>
+            <p class="panel-desc">Students ranked by score using stable merge sort. Deduplication keeps latest attempt per roll number.</p>
+            <button class="btn-primary" id="ranking-btn" style="margin-bottom:1rem;">Load Rankings</button>
+            <div id="ranking-table"></div>
+        </section>
+
+        <!-- Proctoring Panel -->
+        <section id="panel-proctoring" class="panel">
+            <div class="panel-header">
+                <h2>AI Proctoring</h2>
+                <span class="algo-badge">Auto Proctoring Engine</span>
+            </div>
+            <p class="panel-desc">Analyze exam activity for suspicious behaviour — time gaps, rapid clicking, copy-paste, tab switches.</p>
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Student Roll Number</label>
+                        <input type="number" id="proctor-roll" placeholder="e.g. 101" min="1">
+                    </div>
+                    <div class="form-group check-group">
+                        <label>External Detections</label>
+                        <div class="check-row">
+                            <label class="check-label"><input type="checkbox" id="proctor-cp"> Copy-Paste</label>
+                            <label class="check-label"><input type="checkbox" id="proctor-ts"> Tab Switch</label>
+                            <label class="check-label"><input type="checkbox" id="proctor-fa"> Face Absent</label>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-primary" id="proctor-btn">Analyze</button>
+            </div>
+            <div id="proctor-results" style="margin-top:1rem;"></div>
+        </section>
+
+        <!-- Analytics Panel -->
+        <section id="panel-analytics" class="panel">
+            <div class="panel-header">
+                <h2>Performance Analytics</h2>
+                <span class="algo-badge">Statistical Analysis</span>
+            </div>
+            <p class="panel-desc">Computed statistics from student scores stored in the BST.</p>
+            <button class="btn-primary" id="analytics-btn" style="margin-bottom:1rem;">Compute Analytics</button>
+            <div id="analytics-results"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

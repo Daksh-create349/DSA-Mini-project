@@ -75,6 +75,23 @@ async function loadQuestions() {
 // Load on startup
 loadQuestions();
 
+// ── Theme Toggle ──
+const themeToggle = document.getElementById('theme-toggle');
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('examos-theme', next);
+    });
+    const saved = localStorage.getItem('examos-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+}
+
 // ══════════════════════════════════════
 // 2. KEYWORD SEARCH
 // ══════════════════════════════════════
@@ -203,7 +220,7 @@ async function submitExam() {
     const resDiv = document.getElementById('exam-result');
     const levelChanged = result.nextLevel !== result.currentLevel;
     const levelArrow = levelChanged ? '→' : '=';
-    const levelColor = result.nextLevel > result.currentLevel ? 'var(--green)' : result.nextLevel < result.currentLevel ? 'var(--red)' : 'var(--text-muted)';
+    const levelColor = result.nextLevel > result.currentLevel ? 'var(--success)' : result.nextLevel < result.currentLevel ? 'var(--danger)' : 'var(--text-muted)';
     resDiv.innerHTML = `<div class="result-card">
         <div class="result-score">${result.score.toFixed(1)}%</div>
         <div class="result-detail">${result.correct} / ${result.total} correct &bull; Attempt #${result.attempt}</div>
@@ -292,7 +309,7 @@ async function loadSubmissions() {
             <td>${s.studentId}</td>
             <td>${s.examId}</td>
             <td>${s.source}</td>
-            <td style="font-family:var(--mono);font-size:0.8rem;">${s.answers.join(', ')}</td>
+            <td style="font-family:var(--font-mono);font-size:0.8rem;">${s.answers.join(', ')}</td>
             <td>${s.plagiarism ? '<span class="flag-plag">⚠ FLAGGED</span>' : '—'}</td>
         </tr>`;
     });
@@ -333,7 +350,7 @@ async function loadStudents() {
         <thead><tr><th>Roll No</th><th>Name</th><th>Score</th><th>Exam ID</th></tr></thead><tbody>`;
     students.forEach(s => {
         html += `<tr>
-            <td style="font-family:var(--mono)">${s.rollNo}</td>
+            <td style="font-family:var(--font-mono)">${s.rollNo}</td>
             <td>${s.name}</td>
             <td>${s.score.toFixed(2)}</td>
             <td>${s.examId}</td>
@@ -371,7 +388,7 @@ document.getElementById('ranking-btn').addEventListener('click', async () => {
         const medal = i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
         html += `<tr>
             <td>${medal}${s.rank}</td>
-            <td style="font-family:var(--mono)">${s.rollNo}</td>
+            <td style="font-family:var(--font-mono)">${s.rollNo}</td>
             <td>${s.name}</td>
             <td><strong>${s.score.toFixed(2)}</strong></td>
         </tr>`;
@@ -403,11 +420,11 @@ document.getElementById('proctor-btn').addEventListener('click', async () => {
         html += `<div class="result-card" style="text-align:left;margin-bottom:0.75rem;">
             <p style="margin-bottom:0.5rem;"><strong>===== Recorded Exam Timing =====</strong></p>`;
         r.timing.forEach(t => {
-            html += `<p style="font-family:var(--mono);font-size:0.82rem;color:var(--text-muted);margin-bottom:0.2rem;">
+            html += `<p style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted);margin-bottom:0.2rem;">
                 Answer ${t.answer} submitted at ${t.seconds}s (${t.millis}ms)
             </p>`;
         });
-        html += `<p style="margin-top:0.4rem;color:var(--green);font-size:0.82rem;">
+        html += `<p style="margin-top:0.4rem;color:var(--success);font-size:0.82rem;">
             ${r.timingAnalyzed ? 'Timing analysis completed automatically.' : ''}
         </p></div>`;
     }
@@ -445,12 +462,12 @@ document.getElementById('analytics-btn').addEventListener('click', async () => {
             <table class="data-table">
                 <thead><tr><th>Topic</th><th>Average Score</th><th>Performance</th></tr></thead>
                 <tbody>${stats.topicWise.map(t => {
-                    const color = t.average >= 70 ? 'var(--green)' : t.average >= 40 ? 'var(--orange)' : 'var(--red)';
+                    const color = t.average >= 70 ? 'var(--success)' : t.average >= 40 ? 'var(--warning)' : 'var(--danger)';
                     const bar = Math.min(100, Math.max(0, t.average));
                     return `<tr>
                         <td><strong>${t.topic}</strong></td>
-                        <td style="font-family:var(--mono);color:${color}">${t.average.toFixed(2)}%</td>
-                        <td><div style="background:rgba(255,255,255,0.05);border-radius:4px;height:8px;width:120px;">
+                        <td style="font-family:var(--font-mono);color:${color}">${t.average.toFixed(2)}%</td>
+                        <td><div style="background:var(--bg-hover);border-radius:4px;height:8px;width:120px;border:1px solid var(--border);">
                             <div style="background:${color};height:100%;width:${bar}%;border-radius:4px;transition:width 0.3s;"></div>
                         </div></td>
                     </tr>`;
@@ -469,15 +486,15 @@ document.getElementById('analytics-btn').addEventListener('click', async () => {
                 <div class="stat-label">Average Score</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color:var(--green)">${stats.highest.toFixed(2)}</div>
+                <div class="stat-value" style="color:var(--success)">${stats.highest.toFixed(2)}</div>
                 <div class="stat-label">Highest Score</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color:var(--red)">${stats.lowest.toFixed(2)}</div>
+                <div class="stat-value" style="color:var(--danger)">${stats.lowest.toFixed(2)}</div>
                 <div class="stat-label">Lowest Score</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color:var(--orange)">${stats.stdDev.toFixed(2)}</div>
+                <div class="stat-value" style="color:var(--warning)">${stats.stdDev.toFixed(2)}</div>
                 <div class="stat-label">Std Deviation</div>
             </div>
             <div class="stat-card">
