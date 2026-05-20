@@ -8,62 +8,63 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <!-- Sidebar -->
     <nav id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <span class="logo-icon">⬡</span>
+                <i data-lucide="hexagon" class="logo-icon"></i>
                 <div>
                     <h1>ExamOS</h1>
                     <span class="badge">DSA Powered</span>
                 </div>
             </div>
-            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">🌗</button>
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme"><i data-lucide="moon"></i></button>
         </div>
         <div class="nav-section-label">Question Bank</div>
         <button class="nav-btn active" data-panel="questions" id="nav-questions">
-            <span class="nav-icon">📋</span> View Questions
+            <i data-lucide="clipboard-list" class="nav-icon"></i> View Questions
         </button>
         <button class="nav-btn" data-panel="search" id="nav-search">
-            <span class="nav-icon">🔍</span> Keyword Search
+            <i data-lucide="search" class="nav-icon"></i> Keyword Search
         </button>
         <button class="nav-btn" data-panel="topic" id="nav-topic">
-            <span class="nav-icon">🎯</span> Topic Search
+            <i data-lucide="crosshair" class="nav-icon"></i> Topic Search
         </button>
 
         <div class="nav-section-label">Examination</div>
         <button class="nav-btn" data-panel="exam" id="nav-exam">
-            <span class="nav-icon">📝</span> Take Exam (DP)
+            <i data-lucide="file-text" class="nav-icon"></i> Take Exam (DP)
         </button>
         <button class="nav-btn" data-panel="review" id="nav-review">
-            <span class="nav-icon">🔄</span> Answer Review
+            <i data-lucide="refresh-cw" class="nav-icon"></i> Answer Review
         </button>
 
         <div class="nav-section-label">Submissions</div>
         <button class="nav-btn" data-panel="add-sub" id="nav-add-sub">
-            <span class="nav-icon">➕</span> Add Submission
+            <i data-lucide="plus" class="nav-icon"></i> Add Submission
         </button>
         <button class="nav-btn" data-panel="submissions" id="nav-submissions">
-            <span class="nav-icon">📬</span> View Queue
+            <i data-lucide="inbox" class="nav-icon"></i> View Queue
         </button>
         <button class="nav-btn" data-panel="plagiarism" id="nav-plagiarism">
-            <span class="nav-icon">🚨</span> Plagiarism Check
+            <i data-lucide="alert-triangle" class="nav-icon"></i> Plagiarism Check
         </button>
 
         <div class="nav-section-label">Results & Analytics</div>
         <button class="nav-btn" data-panel="students" id="nav-students">
-            <span class="nav-icon">🌳</span> Student BST
+            <i data-lucide="network" class="nav-icon"></i> Student BST
         </button>
         <button class="nav-btn" data-panel="ranking" id="nav-ranking">
-            <span class="nav-icon">🏆</span> Rankings
+            <i data-lucide="award" class="nav-icon"></i> Rankings
         </button>
         <button class="nav-btn" data-panel="proctoring" id="nav-proctoring">
-            <span class="nav-icon">👁️</span> Proctoring
+            <i data-lucide="eye" class="nav-icon"></i> Proctoring
         </button>
         <button class="nav-btn" data-panel="analytics" id="nav-analytics">
-            <span class="nav-icon">📊</span> Analytics
+            <i data-lucide="bar-chart-2" class="nav-icon"></i> Analytics
         </button>
 
         <div class="sidebar-footer">
@@ -315,5 +316,8 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>

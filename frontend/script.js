@@ -310,7 +310,7 @@ async function loadSubmissions() {
             <td>${s.examId}</td>
             <td>${s.source}</td>
             <td style="font-family:var(--font-mono);font-size:0.8rem;">${s.answers.join(', ')}</td>
-            <td>${s.plagiarism ? '<span class="flag-plag">⚠ FLAGGED</span>' : '—'}</td>
+            <td>${s.plagiarism ? '<span class="flag-plag">FLAGGED</span>' : '—'}</td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -329,7 +329,7 @@ document.getElementById('plag-btn').addEventListener('click', async () => {
         r.submissions.forEach(s => {
             html += `<div class="q-card" style="padding:0.65rem 0.85rem;margin-bottom:0.4rem;">
                 <strong>${s.name}</strong> (ID:${s.studentId}) — Answers: [${s.answers.join(', ')}]
-                ${s.plagiarism ? ' <span class="flag-plag">⚠ PLAGIARISM FLAG</span>' : ' ✓ Clean'}
+                ${s.plagiarism ? ' <span class="flag-plag">FLAGGED</span>' : ' <span style="color:var(--success);font-weight:600;">Clean</span>'}
             </div>`;
         });
         html += '</div>';
@@ -385,9 +385,12 @@ document.getElementById('ranking-btn').addEventListener('click', async () => {
     let html = `<table class="data-table">
         <thead><tr><th>Rank</th><th>Roll No</th><th>Name</th><th>Score</th></tr></thead><tbody>`;
     ranked.forEach((s, i) => {
-        const medal = i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+        const medal = i === 0 ? '<span style="color:var(--warning);font-weight:700;margin-right:8px;">1</span>' : 
+                      i === 1 ? '<span style="color:#94a3b8;font-weight:700;margin-right:8px;">2</span>' : 
+                      i === 2 ? '<span style="color:#b45309;font-weight:700;margin-right:8px;">3</span>' : 
+                      '<span style="color:var(--text-muted);font-weight:500;margin-right:8px;">' + (i + 1) + '</span>';
         html += `<tr>
-            <td>${medal}${s.rank}</td>
+            <td>${medal}</td>
             <td style="font-family:var(--font-mono)">${s.rollNo}</td>
             <td>${s.name}</td>
             <td><strong>${s.score.toFixed(2)}</strong></td>
@@ -434,7 +437,7 @@ document.getElementById('proctor-btn').addEventListener('click', async () => {
         <p><strong>Student:</strong> ${r.name} (Roll: ${r.roll})</p>
         <p><strong>Alerts:</strong> ${r.alertCount}</p>
         <span class="suspicious-badge ${r.suspicious ? 'sus' : 'clean'}">
-            ${r.suspicious ? '⚠ SUSPICIOUS' : '✓ CLEAN'}
+            ${r.suspicious ? 'SUSPICIOUS' : 'CLEAN'}
         </span>
     </div>`;
 

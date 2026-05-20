@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ExamOS - DSA Powered Assessment</title>
     <link rel="stylesheet" href="landing.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         // Set theme immediately to prevent flash
         const saved = localStorage.getItem('examos-theme');
@@ -17,7 +18,7 @@
 <body>
     <header class="navbar">
         <div class="logo">
-            <span class="logo-icon">⬡</span>
+            <i data-lucide="hexagon" class="logo-icon"></i>
             <h1>ExamOS</h1>
         </div>
         <div class="nav-links">
@@ -29,12 +30,16 @@
 
     <main>
         <section class="hero">
-            <div class="hero-badge">CS202 Data Structures & Algorithms</div>
-            <h2 class="hero-title">High-Performance Adaptive Examination</h2>
-            <p class="hero-subtitle">A robust, scalable assessment platform built from scratch in C++. Powered by dynamic programming, prefix trees, and custom algorithmic structures.</p>
-            <div class="hero-cta">
-                <a href="dashboard.html" class="btn-primary btn-large">Enter Dashboard</a>
-                <a href="https://github.com/Daksh-create349/DSA-Mini-project" class="btn-secondary btn-large" target="_blank">View Source Code</a>
+            <div class="hero-content">
+                <h2 class="hero-title">High-Performance Adaptive Examination</h2>
+                <p class="hero-subtitle">A robust, scalable assessment platform built from scratch in C++. Powered by dynamic programming, prefix trees, and custom algorithmic structures.</p>
+                <div class="hero-cta">
+                    <a href="dashboard.html" class="btn-primary btn-large">Enter Dashboard</a>
+                    <a href="https://github.com/Daksh-create349/DSA-Mini-project" class="btn-secondary btn-large" target="_blank">View Source Code</a>
+                </div>
+            </div>
+            <div class="hero-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Student taking exam on laptop" class="hero-image">
             </div>
         </section>
 
@@ -45,32 +50,32 @@
             </div>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
+                    <div class="feature-icon"><i data-lucide="zap"></i></div>
                     <h4>DP Knapsack Selection</h4>
                     <p>Uses the 0/1 Knapsack algorithm to dynamically construct balanced exam sets, maximizing topic coverage under strict time limits.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
+                    <div class="feature-icon"><i data-lucide="search"></i></div>
                     <h4>Trie-Based Search</h4>
                     <p>Instant O(L) keyword-based question discovery using a custom Prefix Tree implementation, ensuring rapid content retrieval.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-icon"><i data-lucide="shield-check"></i></div>
                     <h4>Automated Proctoring</h4>
                     <p>Hash map-based plagiarism detection and real-time behavioral analysis to algorithmically ensure academic integrity.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">📊</div>
+                    <div class="feature-icon"><i data-lucide="bar-chart-2"></i></div>
                     <h4>BST Analytics Engine</h4>
                     <p>Student records are maintained in a Binary Search Tree for O(log n) retrieval and real-time statistical performance tracking.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⏱️</div>
+                    <div class="feature-icon"><i data-lucide="timer"></i></div>
                     <h4>Merge Sort Rankings</h4>
                     <p>Stable merge sort algorithm handles deduplication and precise ranking generation for real-time leaderboards.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
+                    <div class="feature-icon"><i data-lucide="layers"></i></div>
                     <h4>Stack & Queue Processing</h4>
                     <p>Asynchronous submission handling via FIFO Queues, combined with LIFO Stacks for robust answer review and state undo operations.</p>
                 </div>
@@ -81,5 +86,8 @@
     <footer>
         <p>&copy; 2026 ExamOS Platform. Engineered with C++ and Raw Data Structures.</p>
     </footer>
+    <script>
+      lucide.createIcons();
+    </script>
 </body>
 </html>
