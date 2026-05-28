@@ -662,6 +662,47 @@ document.getElementById('proctor-btn').addEventListener('click', async () => {
         html += `<p style="margin-top:0.4rem;color:var(--success);font-size:0.82rem;">
             ${r.timingAnalyzed ? 'Timing analysis completed automatically.' : ''}
         </p></div>`;
+
+        // Calculate and add timing analytics metrics if there is more than 1 entry
+        if (r.timing.length > 1) {
+            const gaps = [];
+            for (let i = 1; i < r.timing.length; i++) {
+                gaps.push(r.timing[i].seconds - r.timing[i-1].seconds);
+            }
+            const avgTime = (gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1);
+            const maxTime = Math.max(...gaps);
+            const minTime = Math.min(...gaps);
+
+            html += `
+            <div class="result-card" style="text-align:left;margin-bottom:0.75rem;">
+                <p style="margin-bottom:0.75rem;"><strong>===== Detailed Timing Analytics =====</strong></p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+                    <div style="background:var(--bg-main);padding:0.5rem;border-radius:4px;border:1px solid var(--border);">
+                        <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Avg Time / Q</div>
+                        <div style="font-size:1.2rem;font-weight:700;font-family:var(--font-mono);">${avgTime}s</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:0.5rem;border-radius:4px;border:1px solid var(--border);">
+                        <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Max Time / Q</div>
+                        <div style="font-size:1.2rem;font-weight:700;font-family:var(--font-mono);color:var(--danger);">${maxTime}s</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:0.5rem;border-radius:4px;border:1px solid var(--border);">
+                        <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Min Time / Q</div>
+                        <div style="font-size:1.2rem;font-weight:700;font-family:var(--font-mono);color:var(--success);">${minTime}s</div>
+                    </div>
+                </div>
+                <p style="font-size:0.82rem;font-weight:600;margin-bottom:0.4rem;color:var(--text-muted);">Step Gaps:</p>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    ${gaps.map((g, idx) => {
+                        const color = g >= 60 ? 'var(--danger)' : g >= 30 ? 'var(--warning)' : 'var(--success)';
+                        const bg = g >= 60 ? 'var(--danger-light)' : g >= 30 ? 'var(--warning-light)' : 'var(--success-light)';
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0.6rem;background:${bg};border-radius:4px;font-size:0.8rem;border:1px solid var(--border);">
+                            <span>Answer ${idx + 1} → Answer ${idx + 2}</span>
+                            <strong style="color:${color};font-family:var(--font-mono);">${g}s</strong>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+        }
     }
 
     html += `<div class="result-card" style="text-align:left;">
