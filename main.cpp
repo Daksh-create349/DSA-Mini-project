@@ -219,13 +219,81 @@ int main() {
                             correctStreak++;
                             wrongStreak = 0;
                             latestCorrect = true;
-                            topicScoresMap[q->topic].push_back(100.0);
                         } else {
                             cout << "  Wrong. Correct answer was option " << q->answer << ".\n";
                             wrongStreak++;
                             correctStreak = 0;
                             latestCorrect = false;
-                            topicScoresMap[q->topic].push_back(0.0);
+                        }
+                    }
+
+                    // ===== Answer Review Phase (Real Stack Integration) =====
+                    cout << "\n===== Answer Review Phase =====\n";
+                    cout << "  Your current answers:\n";
+                    for (int i = 0; i < (int)selected.size(); i++) {
+                        cout << "  " << (i + 1) << ". Q" << selected[i]->id
+                             << " [" << selected[i]->topic << "]: option "
+                             << answers[i] << " (" << selected[i]->options[answers[i]] << ")\n";
+                    }
+
+                    char wantReview = readYesNo("\n  Change any answer before final submission? (y/n): ");
+                    while (wantReview == 'y' || wantReview == 'Y') {
+                        int qIdx = readInt("  Question number to change (1-"
+                                           + to_string((int)selected.size()) + "): ",
+                                           1, (int)selected.size());
+                        qIdx--; // convert to 0-indexed
+
+                        cout << "  Current answer for Q" << selected[qIdx]->id
+                             << ": option " << answers[qIdx]
+                             << " (" << selected[qIdx]->options[answers[qIdx]] << ")\n";
+                        for (int i = 0; i < (int)selected[qIdx]->options.size(); i++)
+                            cout << "    " << i << ". " << selected[qIdx]->options[i] << "\n";
+
+                        int newAns = readInt("  New answer (0-3): ", 0, 3);
+
+                        if (newAns != answers[qIdx]) {
+                            // Push old answer onto the review stack (REAL usage)
+                            reviewStack.push(selected[qIdx]->id, answers[qIdx], newAns,
+                                             "Exam review by " + name);
+                            answers[qIdx] = newAns; // Actually change the answer
+                        } else {
+                            cout << "  Same answer, no change recorded.\n";
+                        }
+
+                        if (!reviewStack.isEmpty()) {
+                            char undoChoice = readYesNo("  Undo this change? (y/n): ");
+                            if (undoChoice == 'y' || undoChoice == 'Y') {
+                                ReviewRecord r = reviewStack.pop();
+                                if (r.questionId != -1) {
+                                    for (int i = 0; i < (int)selected.size(); i++) {
+                                        if (selected[i]->id == r.questionId) {
+                                            answers[i] = r.previousAnswer;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Show updated answers
+                        cout << "\n  Updated answers:\n";
+                        for (int i = 0; i < (int)selected.size(); i++) {
+                            cout << "  " << (i + 1) << ". Q" << selected[i]->id
+                                 << ": option " << answers[i]
+                                 << " (" << selected[i]->options[answers[i]] << ")\n";
+                        }
+
+                        wantReview = readYesNo("\n  Change another answer? (y/n): ");
+                    }
+
+                    // Recalculate final score using reviewed answers
+                    correctAnswers = 0;
+                    for (int i = 0; i < (int)selected.size(); i++) {
+                        if (answers[i] == selected[i]->answer) {
+                            correctAnswers++;
+                            topicScoresMap[selected[i]->topic].push_back(100.0);
+                        } else {
+                            topicScoresMap[selected[i]->topic].push_back(0.0);
                         }
                     }
 
@@ -293,15 +361,28 @@ int main() {
             }
 
             case 8: {
-                int qId = readInt("Question id: ", 1, 999999);
-                int oldAns = readInt("Previous answer (0-3): ", 0, 3);
-                int newAns = readInt("New answer (0-3): ", 0, 3);
-                reviewStack.push(qId, oldAns, newAns, "Manual review update");
+                cout << "\n===== Answer Review Stack =====\n";
+                if (reviewStack.isEmpty()) {
+                    cout << "  No review records yet.\n";
+                    cout << "  Tip: Take an exam (option 3) and change answers during\n";
+                    cout << "  the review phase to see real stack usage.\n";
+                }
                 reviewStack.displayHistory();
 
-                char undo = readYesNo("Undo latest review? (y/n): ");
-                if (undo == 'y' || undo == 'Y') reviewStack.pop();
-                reviewStack.displayHistory();
+                char addManual = readYesNo("Push a manual review entry? (y/n): ");
+                if (addManual == 'y' || addManual == 'Y') {
+                    int qId = readInt("Question id: ", 1, 999999);
+                    int oldAns = readInt("Previous answer (0-3): ", 0, 3);
+                    int newAns = readInt("New answer (0-3): ", 0, 3);
+                    reviewStack.push(qId, oldAns, newAns, "Manual review update");
+                    reviewStack.displayHistory();
+                }
+
+                if (!reviewStack.isEmpty()) {
+                    char undo = readYesNo("Undo latest review? (y/n): ");
+                    if (undo == 'y' || undo == 'Y') reviewStack.pop();
+                    reviewStack.displayHistory();
+                }
                 break;
             }
 

@@ -162,6 +162,11 @@ public:
     bool isEmpty()  const { return stack.empty(); }
     int  getSize()  const { return (int)stack.size(); }
 
+    void clear() {
+        stack.clear();
+        cout << "  [Stack] Cleared all review history.\n";
+    }
+
     void displayHistory() const {
         cout << "\n===== Answer Review History (top -> bottom) =====\n";
         if (stack.empty()) { cout << "  (empty)\n"; return; }

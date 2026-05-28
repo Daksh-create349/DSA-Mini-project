@@ -157,6 +157,25 @@ vector<int> jIntArr(const string& j, const string& k) {
     return r;
 }
 
+vector<long long> jLongArr(const string& j, const string& k) {
+    vector<long long> r;
+    string s = "\"" + k + "\"";
+    size_t p = j.find(s);
+    if (p == string::npos) return r;
+    p = j.find('[', p);
+    if (p == string::npos) return r;
+    size_t e = j.find(']', p);
+    if (e == string::npos) return r;
+    string sub = j.substr(p + 1, e - p - 1);
+    stringstream ss(sub);
+    string tok;
+    while (getline(ss, tok, ',')) {
+        while (!tok.empty() && tok[0] == ' ') tok.erase(0, 1);
+        if (!tok.empty()) try { r.push_back(stoll(tok)); } catch (...) {}
+    }
+    return r;
+}
+
 int nextAttempt(int rollNo) {
     int la = 0;
     for (auto& rec : g_records)
@@ -284,11 +303,31 @@ int main() {
             g_activityLog[roll] = ExamActivity();
             g_activityLog[roll].studentName = name;
             g_activityLog[roll].timingAnalyzed = false;
-            auto now = chrono::steady_clock::now().time_since_epoch();
-            long long ms = chrono::duration_cast<chrono::milliseconds>(now).count();
-            for (int i = 0; i < total; i++) {
-                g_activityLog[roll].answerTimesMillis.push_back(ms + i * 5000);
-                g_activityLog[roll].answerTimesSeconds.push_back(ms / 1000 + i * 5);
+
+            vector<long long> realTimesMillis = jLongArr(req.body, "answerTimesMillis");
+            vector<long long> realTimesSeconds = jLongArr(req.body, "answerTimesSeconds");
+
+            if (!realTimesMillis.empty()) {
+                g_activityLog[roll].answerTimesMillis = realTimesMillis;
+                g_activityLog[roll].answerTimesSeconds = realTimesSeconds;
+            } else {
+                // Fallback to mock generation if not provided (e.g. CLI or manual API tests)
+                auto now = chrono::steady_clock::now().time_since_epoch();
+                long long ms = chrono::duration_cast<chrono::milliseconds>(now).count();
+                for (int i = 0; i < total; i++) {
+                    g_activityLog[roll].answerTimesMillis.push_back(ms + i * 5000);
+                    g_activityLog[roll].answerTimesSeconds.push_back(ms / 1000 + i * 5);
+                }
+            }
+
+            // Run timing proctoring analysis immediately on submission
+            auto& act = g_activityLog[roll];
+            if (!act.timingAnalyzed) {
+                for (int j = 1; j < (int)act.answerTimesSeconds.size(); j++) {
+                    g_proctor.checkTimeGap(roll, act.studentName, act.answerTimesSeconds[j-1], act.answerTimesSeconds[j]);
+                }
+                g_proctor.checkRapidClicking(roll, act.studentName, act.answerTimesMillis);
+                act.timingAnalyzed = true;
             }
         }
 
@@ -385,9 +424,19 @@ int main() {
         for (int i = 0; i < (int)all.size(); i++) {
             auto* s = all[i];
             if (i) o << ",";
+
+            auto alerts = g_proctor.getAlertsForStudent(s->studentId);
+            bool hasTimeGap = false;
+            for (auto& a : alerts) {
+                if (a.type == ProctorEvent::TIME_GAP) {
+                    hasTimeGap = true;
+                }
+            }
+
             o << "{\"studentId\":" << s->studentId
               << ",\"name\":\"" << je(s->studentName) << "\""
               << ",\"plagiarism\":" << (s->plagiarismFlag ? "true" : "false")
+              << ",\"timeGap\":" << (hasTimeGap ? "true" : "false")
               << ",\"answers\":[";
             for (int j = 0; j < (int)s->answers.size(); j++) {
                 if (j) o << ",";
@@ -430,7 +479,15 @@ int main() {
         res.set_content(o.str(), "application/json");
     });
 
-    // 11. GET /api/review
+    // 11. POST /api/review/clear
+    svr.Post("/api/review/clear", [](const httplib::Request&, httplib::Response& res) {
+        lock_guard<mutex> lk(g_mtx);
+        g_reviewStack.clear();
+        cors(res);
+        res.set_content("{\"success\":true}", "application/json");
+    });
+
+    // 12. GET /api/review
     svr.Get("/api/review", [](const httplib::Request&, httplib::Response& res) {
         lock_guard<mutex> lk(g_mtx);
         // Access stack contents via peek + pop + re-push

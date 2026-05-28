@@ -150,7 +150,7 @@ struct ProctorAlert {
 // ─────────────────────────────────────────────
 class AutoProctor {
     vector<ProctorAlert> alerts;
-    static const int TIME_GAP_THRESHOLD = 120;
+    static const int TIME_GAP_THRESHOLD = 60;
     static const int RAPID_CLICK_MS     = 1500;
 
     void logAlert(ProctorAlert a) {
@@ -164,7 +164,7 @@ public:
     void checkTimeGap(int sid, const string& name,
                       long long prev, long long curr) {
         long long gap = curr - prev;
-        if (gap > TIME_GAP_THRESHOLD)
+        if (gap >= TIME_GAP_THRESHOLD)
             logAlert({sid, name, ProctorEvent::TIME_GAP,
                       "Gap of " + to_string(gap) + "s between answers", curr});
     }

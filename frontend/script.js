@@ -123,6 +123,24 @@ document.getElementById('topic-btn').addEventListener('click', async () => {
 // 4. ADAPTIVE EXAM (DP)
 // ══════════════════════════════════════
 let examQuestions = [];
+let currentSelections = {};
+let examTimerInterval = null;
+let questionAnswerTimes = {};
+let examStartTime = null;
+
+async function updateExamUndoBtnState(size) {
+    const undoBtn = document.getElementById('exam-undo-btn');
+    if (!undoBtn) return;
+    if (size === undefined) {
+        const r = await get('/api/review').catch(() => ({ size: 0 }));
+        size = r.size || 0;
+    }
+    if (size > 0) {
+        undoBtn.classList.remove('hidden');
+    } else {
+        undoBtn.classList.add('hidden');
+    }
+}
 
 document.getElementById('exam-start-btn').addEventListener('click', async () => {
     const level = parseInt(document.getElementById('exam-level').value) || 3;
@@ -137,7 +155,22 @@ document.getElementById('exam-start-btn').addEventListener('click', async () => 
         return;
     }
 
-    let html = '';
+    // Reset local selections and clear stack on backend for a fresh exam
+    currentSelections = {};
+    examStartTime = Date.now();
+    questionAnswerTimes = {};
+    await post('/api/review/clear', {}).catch(() => {});
+
+    // Clear logs in the scrollable log area
+    const statusBoxEl = document.getElementById('review-status');
+    if (statusBoxEl) statusBoxEl.innerHTML = '';
+
+    let html = `
+    <div class="exam-timer-card" id="exam-timer-card" style="position: sticky; top: 0; z-index: 100; background: var(--bg-card); border: 2px solid var(--accent); padding: 0.75rem 1.25rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-md); transition: border-color 0.3s;">
+        <div style="font-weight:600;font-size:1.1rem;color:var(--text-main);"><i data-lucide="clock" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;color:var(--accent);"></i> Time Remaining</div>
+        <div id="exam-timer-display" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">--:--</div>
+    </div>`;
+
     examQuestions.forEach((q, idx) => {
         html += `<div class="exam-q" data-qid="${q.id}">
             <div class="exam-q-header">
@@ -156,7 +189,13 @@ document.getElementById('exam-start-btn').addEventListener('click', async () => 
             </div>
         </div>`;
     });
-    html += `<button class="btn-primary" id="exam-submit-btn" style="margin-top:0.5rem;">Submit Exam</button>`;
+    html += `
+    <div class="exam-actions" style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <button class="btn-primary" id="exam-submit-btn">Submit Exam</button>
+        <button class="btn-danger hidden" id="exam-undo-btn" style="background: var(--danger); border-color: var(--danger);">
+            <i data-lucide="undo-2" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i> Undo Last Change (Stack Pop)
+        </button>
+    </div>`;
 
     const qDiv = document.getElementById('exam-questions');
     qDiv.innerHTML = html;
@@ -164,16 +203,130 @@ document.getElementById('exam-start-btn').addEventListener('click', async () => 
     document.getElementById('exam-result').classList.add('hidden');
     document.getElementById('exam-setup').style.display = 'none';
 
-    // Radio selection highlight
+    // Start running countdown timer
+    let timeLeft = time;
+    if (examTimerInterval) clearInterval(examTimerInterval);
+    
+    const timerDisplay = document.getElementById('exam-timer-display');
+    const updateTimerUI = () => {
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        if (timerDisplay) {
+            timerDisplay.textContent = `${m}:${s}`;
+            if (timeLeft <= 60) { // last minute
+                timerDisplay.style.color = 'var(--danger)';
+                timerDisplay.closest('.exam-timer-card').classList.add('pulse-animation');
+                timerDisplay.closest('.exam-timer-card').style.borderColor = 'var(--danger)';
+            } else {
+                timerDisplay.style.color = 'var(--text-main)';
+            }
+        }
+    };
+    updateTimerUI();
+
+    examTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(examTimerInterval);
+            examTimerInterval = null;
+            alert("Time is up! Submitting your exam automatically.");
+            submitExam();
+        } else {
+            updateTimerUI();
+        }
+    }, 1000);
+
+    // Radio selection highlight and Answer Review Stack integration
     qDiv.querySelectorAll('input[type="radio"]').forEach(r => {
-        r.addEventListener('change', () => {
+        r.addEventListener('change', async () => {
             const name = r.name;
+            const idx = parseInt(name.split('-')[1]);
+            const q = examQuestions[idx];
+            const qId = q.id;
+            const newAnswer = parseInt(r.value);
+            const prevAnswer = currentSelections[qId];
+
+            questionAnswerTimes[qId] = Date.now();
+
             document.querySelectorAll(`input[name="${name}"]`).forEach(rr => {
                 rr.closest('.exam-opt-label').classList.remove('selected');
             });
             r.closest('.exam-opt-label').classList.add('selected');
+
+            if (prevAnswer !== undefined && prevAnswer !== null && prevAnswer !== newAnswer) {
+                // Answer was changed! Push to review stack
+                const rPush = await post('/api/review/push', {
+                    questionId: qId,
+                    prevAnswer: prevAnswer,
+                    newAnswer: newAnswer,
+                    note: `Changed Q${qId} answer from Option ${prevAnswer} to ${newAnswer}`
+                });
+                
+                const statusBox = document.getElementById('review-status');
+                if (statusBox) {
+                    statusBox.insertAdjacentHTML('beforeend', statusHTML(`Pushed to Stack: Q${qId} changed ${prevAnswer} → ${newAnswer}. Stack size: ${rPush.size}`, 'success'));
+                    statusBox.scrollTop = statusBox.scrollHeight;
+                }
+                updateExamUndoBtnState(rPush.size);
+            }
+            currentSelections[qId] = newAnswer;
         });
     });
+
+    // Setup undo button click listener
+    const undoBtn = document.getElementById('exam-undo-btn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', async () => {
+            const r = await post('/api/review/pop', {});
+            if (r.empty) {
+                alert('No changes to undo.');
+                updateExamUndoBtnState(0);
+                return;
+            }
+            
+            const qId = r.questionId;
+            const prev = r.prevAnswer;
+            
+            // Revert in examQuestions
+            const qIdx = examQuestions.findIndex(q => q.id === qId);
+            if (qIdx !== -1) {
+                // Clear existing selections
+                document.querySelectorAll(`input[name="eq-${qIdx}"]`).forEach(rr => {
+                    rr.closest('.exam-opt-label').classList.remove('selected');
+                    rr.checked = false;
+                });
+                
+                if (prev !== -1) {
+                    const prevRadio = document.querySelector(`input[name="eq-${qIdx}"][value="${prev}"]`);
+                    if (prevRadio) {
+                        prevRadio.checked = true;
+                        prevRadio.closest('.exam-opt-label').classList.add('selected');
+                    }
+                    currentSelections[qId] = prev;
+                    questionAnswerTimes[qId] = Date.now();
+                } else {
+                    delete currentSelections[qId];
+                    delete questionAnswerTimes[qId];
+                }
+            }
+            
+            // Notify user
+            const statusBox = document.getElementById('review-status');
+            if (statusBox) {
+                statusBox.insertAdjacentHTML('beforeend', statusHTML(`Undone: Q${qId} reverted ${r.newAnswer} → ${prev === -1 ? 'None' : prev}`, 'info'));
+                statusBox.scrollTop = statusBox.scrollHeight;
+            }
+            
+            // Update button visibility based on remaining stack size
+            const state = await get('/api/review');
+            updateExamUndoBtnState(state.size);
+        });
+    }
+
+    // Refresh icons dynamically
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 
     // Submit handler
     document.getElementById('exam-submit-btn').addEventListener('click', submitExam);
@@ -189,6 +342,20 @@ async function submitExam() {
         return;
     }
 
+    // Stop the exam timer
+    if (examTimerInterval) {
+        clearInterval(examTimerInterval);
+        examTimerInterval = null;
+    }
+
+    // Update timer card display
+    const timerCard = document.getElementById('exam-timer-card');
+    if (timerCard) {
+        timerCard.style.borderColor = 'var(--border)';
+        timerCard.innerHTML = `<div style="font-weight:600;font-size:1.1rem;color:var(--text-muted);"><i data-lucide="clock" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i> Exam Ended</div>`;
+        if (window.lucide) window.lucide.createIcons();
+    }
+
     const answers = [];
     const questionIds = [];
     examQuestions.forEach((q, idx) => {
@@ -197,8 +364,14 @@ async function submitExam() {
         questionIds.push(q.id);
     });
 
+    const finalTimesMillis = examQuestions.map(q => questionAnswerTimes[q.id] || examStartTime);
+    finalTimesMillis.sort((a, b) => a - b);
+    const finalTimesSeconds = finalTimesMillis.map(t => Math.floor(t / 1000));
+
     const result = await post('/api/exam/submit', {
-        roll, name, examId: 501, level, answers, questionIds
+        roll, name, examId: 501, level, answers, questionIds,
+        answerTimesMillis: finalTimesMillis,
+        answerTimesSeconds: finalTimesSeconds
     });
 
     // Highlight correct/wrong
@@ -216,6 +389,12 @@ async function submitExam() {
 
     document.getElementById('exam-submit-btn').disabled = true;
     document.getElementById('exam-submit-btn').textContent = 'Submitted';
+
+    // Hide the Undo button once submitted
+    const undoBtn = document.getElementById('exam-undo-btn');
+    if (undoBtn) {
+        undoBtn.classList.add('hidden');
+    }
 
     const resDiv = document.getElementById('exam-result');
     const levelChanged = result.nextLevel !== result.currentLevel;
@@ -238,11 +417,17 @@ async function submitExam() {
 }
 
 function resetExam() {
+    if (examTimerInterval) {
+        clearInterval(examTimerInterval);
+        examTimerInterval = null;
+    }
     document.getElementById('exam-setup').style.display = '';
     document.getElementById('exam-questions').classList.add('hidden');
     document.getElementById('exam-questions').innerHTML = '';
     document.getElementById('exam-result').classList.add('hidden');
     examQuestions = [];
+    currentSelections = {};
+    actionTimestamps = [];
 }
 window.resetExam = resetExam;
 
@@ -256,17 +441,53 @@ document.getElementById('review-push-btn').addEventListener('click', async () =>
     const note = document.getElementById('review-note').value;
     if (!qId) return;
     const r = await post('/api/review/push', { questionId: qId, prevAnswer: prev, newAnswer: newA, note });
-    document.getElementById('review-status').innerHTML =
-        statusHTML(`Pushed review for Q${qId}: ${prev} → ${newA}. Stack size: ${r.size}`, 'success');
+    
+    const statusBox = document.getElementById('review-status');
+    if (statusBox) {
+        statusBox.insertAdjacentHTML('beforeend', statusHTML(`Pushed review for Q${qId}: ${prev} → ${newA}. Stack size: ${r.size}`, 'success'));
+        statusBox.scrollTop = statusBox.scrollHeight;
+    }
 });
 
 document.getElementById('review-pop-btn').addEventListener('click', async () => {
     const r = await post('/api/review/pop', {});
+    const statusBox = document.getElementById('review-status');
     if (r.empty) {
-        document.getElementById('review-status').innerHTML = statusHTML('Stack is empty — nothing to undo.', 'error');
+        if (statusBox) {
+            statusBox.insertAdjacentHTML('beforeend', statusHTML('Stack is empty — nothing to undo.', 'error'));
+            statusBox.scrollTop = statusBox.scrollHeight;
+        }
     } else {
-        document.getElementById('review-status').innerHTML =
-            statusHTML(`Undone: Q${r.questionId} reverted ${r.newAnswer} → ${r.prevAnswer}`, 'info');
+        const qId = r.questionId;
+        const prev = r.prevAnswer;
+        if (statusBox) {
+            statusBox.insertAdjacentHTML('beforeend', statusHTML(`Undone: Q${qId} reverted ${r.newAnswer} → ${prev === -1 ? 'None' : prev}`, 'info'));
+            statusBox.scrollTop = statusBox.scrollHeight;
+        }
+
+        // Sync with active exam if matching question exists
+        if (examQuestions && examQuestions.length > 0) {
+            const qIdx = examQuestions.findIndex(q => q.id === qId);
+            if (qIdx !== -1) {
+                document.querySelectorAll(`input[name="eq-${qIdx}"]`).forEach(rr => {
+                    rr.closest('.exam-opt-label').classList.remove('selected');
+                    rr.checked = false;
+                });
+                if (prev !== -1) {
+                    const prevRadio = document.querySelector(`input[name="eq-${qIdx}"][value="${prev}"]`);
+                    if (prevRadio) {
+                        prevRadio.checked = true;
+                        prevRadio.closest('.exam-opt-label').classList.add('selected');
+                    }
+                    currentSelections[qId] = prev;
+                } else {
+                    delete currentSelections[qId];
+                }
+            }
+            // Update the exam undo button state
+            const state = await get('/api/review').catch(() => ({ size: 0 }));
+            updateExamUndoBtnState(state.size);
+        }
     }
 });
 
@@ -327,9 +548,20 @@ document.getElementById('plag-btn').addEventListener('click', async () => {
     if (r.submissions && r.submissions.length) {
         html += '<div style="margin-top:0.75rem;">';
         r.submissions.forEach(s => {
+            const plagBadge = s.plagiarism 
+                ? '<span class="flag-plag">FLAGGED</span>' 
+                : '<span style="color:var(--success);font-weight:600;">Clean</span>';
+                
+            const timeGapBadge = s.timeGap 
+                ? '<span class="flag-plag" style="background: var(--warning-light); color: var(--warning); border-color: var(--warning); margin-left: 8px;">TIME GAP FLAGGED</span>'
+                : '';
+
             html += `<div class="q-card" style="padding:0.65rem 0.85rem;margin-bottom:0.4rem;">
                 <strong>${s.name}</strong> (ID:${s.studentId}) — Answers: [${s.answers.join(', ')}]
-                ${s.plagiarism ? ' <span class="flag-plag">FLAGGED</span>' : ' <span style="color:var(--success);font-weight:600;">Clean</span>'}
+                <div style="margin-top: 0.35rem; display: flex; gap: 0.5rem; align-items: center;">
+                    ${plagBadge}
+                    ${timeGapBadge}
+                </div>
             </div>`;
         });
         html += '</div>';

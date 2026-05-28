@@ -521,3 +521,27 @@ button {
     #content { padding: 1rem; }
     .panel-header h2 { font-size: 1.25rem; }
 }
+
+/* Stack Review Scrollable Logs */
+#review-status {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    background: var(--bg-main);
+}
+#review-status:empty {
+    border: none;
+    padding: 0;
+}
+
+/* Timer Card Pulse Animation */
+@keyframes pulse-red {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+.pulse-animation {
+    animation: pulse-red 1.2s infinite ease-in-out;
+}
